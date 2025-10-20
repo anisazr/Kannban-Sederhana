@@ -35,16 +35,6 @@ Tujuannya adalah memberikan contoh sederhana tentang:
 
 ---
 
-##  Tampilan Aplikasi
-
-| Halaman Utama | Menambah Tugas | Mengubah Status |
-|:--------------:|:--------------:|:----------------:|
-| ![Home Screenshot](assets/screenshots/home.png) | ![Add Task](assets/screenshots/add.png) | ![Change Status](assets/screenshots/change.png) |
-
-> *(Tambahkan screenshot aplikasi kamu di folder `assets/screenshots/` agar tabel di atas tampil rapi di GitHub)*
-
----
-
 ##  Cara Menjalankan Aplikasi
 
 1. Clone repositori ini:
