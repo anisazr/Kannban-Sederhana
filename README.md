@@ -40,3 +40,6 @@ Tujuannya adalah memberikan contoh sederhana tentang:
 1. Clone repositori ini:
    ```bash
    git clone https://github.com/anisazr/Kannban-Sederhana.git
+
+## Demo Kannban Sederhana
+![Demo Video](https://github.com/anisazr/Kannban-Sederhana/issues/1#issue-3578091221)
