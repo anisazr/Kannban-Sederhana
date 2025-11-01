@@ -1,86 +1,91 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 void main() {
-  runApp(const MaterialApp(home: KanbanBoard()));
+  runApp(GetMaterialApp(home: KanbanBoard()));
 }
 
+// Model Task
 class Task {
   String id;
   String title;
-  String status; // todo, doing, done
+  String status;
 
   Task({required this.id, required this.title, required this.status});
 }
 
-class KanbanBoard extends StatefulWidget {
-  const KanbanBoard({super.key});
-
-  @override
-  State<KanbanBoard> createState() => _KanbanBoardState();
-}
-
-class _KanbanBoardState extends State<KanbanBoard> {
-  List<Task> tasks = [];
+// Controller menggunakan GetX
+class TaskController extends GetxController {
+  var tasks = <Task>[].obs;
 
   void addTask(String title) {
-    setState(() {
-      tasks.add(Task(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        title: title,
-        status: 'todo',
-      ));
-    });
+    tasks.add(Task(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: title,
+      status: 'todo',
+    ));
   }
 
   void editTask(String id, String newTitle) {
-    setState(() {
-      final index = tasks.indexWhere((t) => t.id == id);
-      if (index != -1) tasks[index].title = newTitle;
-    });
+    final index = tasks.indexWhere((t) => t.id == id);
+    if (index != -1) {
+      tasks[index].title = newTitle;
+      tasks.refresh();
+    }
   }
 
   void deleteTask(String id) {
-    setState(() {
-      tasks.removeWhere((t) => t.id == id);
-    });
+    tasks.removeWhere((t) => t.id == id);
   }
 
   void moveTask(String id) {
-    setState(() {
-      final index = tasks.indexWhere((t) => t.id == id);
-      if (index != -1) {
-        if (tasks[index].status == 'todo') {
-          tasks[index].status = 'doing';
-        } else if (tasks[index].status == 'doing') {
-          tasks[index].status = 'done';
-        }
+    final index = tasks.indexWhere((t) => t.id == id);
+    if (index != -1) {
+      if (tasks[index].status == 'todo') {
+        tasks[index].status = 'doing';
+      } else if (tasks[index].status == 'doing') {
+        tasks[index].status = 'done';
       }
-    });
+      tasks.refresh();
+    }
   }
+}
+
+// Tampilan utama
+class KanbanBoard extends StatelessWidget {
+  final TaskController c = Get.put(TaskController());
+
+  KanbanBoard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final todo = tasks.where((t) => t.status == 'todo').toList();
-    final doing = tasks.where((t) => t.status == 'doing').toList();
-    final done = tasks.where((t) => t.status == 'done').toList();
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text('To Do Board'),
+        title: const Text(
+          'To Do Board',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: Colors.brown,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          buildColumn('To Do', todo, Colors.amber),
-          buildColumn('Doing', doing, Colors.greenAccent),
-          buildColumn('Done', done, Colors.lightBlueAccent),
-        ],
-      ),
+      body: Obx(() {
+        final todo = c.tasks.where((t) => t.status == 'todo').toList();
+        final doing = c.tasks.where((t) => t.status == 'doing').toList();
+        final done = c.tasks.where((t) => t.status == 'done').toList();
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            buildColumn('To Do', todo, Colors.amber),
+            buildColumn('Doing', doing, Colors.greenAccent),
+            buildColumn('Done', done, Colors.lightBlueAccent),
+          ],
+        );
+      }),
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.brown,
         onPressed: () => showAddDialog(context),
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -89,9 +94,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
     return Expanded(
       child: Container(
         decoration: BoxDecoration(
-          border: Border(
-            right: BorderSide(color: Colors.grey.shade300),
-          ),
+          border: Border(right: BorderSide(color: Colors.grey.shade300)),
         ),
         child: Column(
           children: [
@@ -102,10 +105,7 @@ class _KanbanBoardState extends State<KanbanBoard> {
               child: Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
             ),
             Expanded(
@@ -121,15 +121,15 @@ class _KanbanBoardState extends State<KanbanBoard> {
                           if (task.status != 'done')
                             IconButton(
                               icon: const Icon(Icons.arrow_forward),
-                              onPressed: () => moveTask(task.id),
+                              onPressed: () => c.moveTask(task.id),
                             ),
                           IconButton(
                             icon: const Icon(Icons.edit),
-                            onPressed: () => showEditDialog(context, task),
+                            onPressed: () => showEditDialog(Get.context!, task),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
-                            onPressed: () => deleteTask(task.id),
+                            onPressed: () => c.deleteTask(task.id),
                           ),
                         ],
                       ),
@@ -146,9 +146,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
 
   void showAddDialog(BuildContext context) {
     final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
+    Get.dialog(
+      AlertDialog(
         title: const Text('Tambah To Do'),
         content: TextField(
           controller: controller,
@@ -157,8 +156,8 @@ class _KanbanBoardState extends State<KanbanBoard> {
         actions: [
           TextButton(
             onPressed: () {
-              if (controller.text.isNotEmpty) addTask(controller.text);
-              Navigator.pop(context);
+              if (controller.text.isNotEmpty) c.addTask(controller.text);
+              Get.back();
             },
             child: const Text('Tambah'),
           ),
@@ -169,16 +168,15 @@ class _KanbanBoardState extends State<KanbanBoard> {
 
   void showEditDialog(BuildContext context, Task task) {
     final controller = TextEditingController(text: task.title);
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
+    Get.dialog(
+      AlertDialog(
         title: const Text('Edit To Do'),
         content: TextField(controller: controller),
         actions: [
           TextButton(
             onPressed: () {
-              if (controller.text.isNotEmpty) editTask(task.id, controller.text);
-              Navigator.pop(context);
+              if (controller.text.isNotEmpty) c.editTask(task.id, controller.text);
+              Get.back();
             },
             child: const Text('Simpan'),
           ),
